@@ -14,9 +14,10 @@ module.exports = {
       minHeight: {
         modal: '200px',
         input: '36px',
+        card: '160px',
       },
       minWidth: {
-        modal: '360px',
+        modal: '400px',
       },
       maxWidth: {
         input: '200px',

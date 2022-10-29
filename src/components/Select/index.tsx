@@ -9,13 +9,14 @@ const { Option, Options } = Combobox;
 
 interface Props {
   label: string;
-  value: string;
+  value?: string;
   options: string[];
+  disabled?: boolean;
   required?: boolean;
   onSelect?: (value: string) => void;
 }
 
-const Select: React.FC<Props> = ({ label, value, options, required, onSelect }) => {
+const Select: React.FC<Props> = ({ label, value, options, required, disabled, onSelect }) => {
   const [query, setQuery] = useState<string>('');
   const filteredOptions =
     query === ''
@@ -29,11 +30,11 @@ const Select: React.FC<Props> = ({ label, value, options, required, onSelect }) 
   };
 
   return (
-    <>
+    <div>
       {label && <label className="mb-1 font-medium">{label}</label>}
       {label && required && <span className="text-rose-600">*</span>}
 
-      <Combobox as="div" className="relative mb-4" value={value} onChange={onSelect}>
+      <Combobox as="div" className="relative mb-4" value={value} onChange={onSelect} disabled={disabled}>
         <div className="group relative w-full max-w-input transition">
           <Combobox.Input
             onChange={queryHandler}
@@ -56,24 +57,24 @@ const Select: React.FC<Props> = ({ label, value, options, required, onSelect }) 
         >
           <Options
             as="ul"
-            className="absolute left-0 w-full max-w-input mt-2 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden"
+            className="absolute left-0 max-h-40 w-full max-w-input mt-2 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-scroll z-50"
           >
             {filteredOptions.length === 0 && <Empty />}
 
-            {filteredOptions.map(city => (
+            {filteredOptions.map((option: string) => (
               <Option
                 as="li"
                 className="py-2 px-4 hover:bg-gray-200 hover:cursor-pointer transition-all"
-                key={_.uniqueId(city)}
-                value={city}
+                key={_.uniqueId(option)}
+                value={option}
               >
-                {city}
+                {option}
               </Option>
             ))}
           </Options>
         </Transition>
       </Combobox>
-    </>
+    </div>
   );
 };
 

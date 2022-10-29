@@ -1,47 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import React from 'react';
 import { useQuery } from 'react-query';
-import { GraphQLClient, gql } from 'graphql-request';
 
 // components
-import { Text } from 'components';
+import { Loader } from 'components';
 
 // containers
 import { Header, UsersList } from 'containers';
 
-import 'sources/styles/styles.css';
-import 'antd/dist/antd.css';
+// queries
+import { getAllUsers } from 'graphql/queries';
 
-const path = 'http://localhost:4000';
+// context
+import { UsersContext } from './context';
+
+// styles
+import 'sources/styles/styles.css';
 
 const App: React.FC = () => {
-  const graphQLClient = new GraphQLClient(path);
-
-  const init = async () => {
-    const response = await graphQLClient.request(gql`
-      query {
-        data: allUsers {
-          id
-          firstName
-          lastName
-        }
-      }
-    `);
-    console.log(response);
-  };
-
-  useEffect(() => {
-    init();
-  }, []);
+  const { isLoading, data, refetch } = useQuery('get-all-users', () => getAllUsers());
 
   return (
-    <BrowserRouter>
-      <Header />
+    <>
+      {isLoading && <Loader />}
 
-      <main>
-        <UsersList users={[]} />
-      </main>
-    </BrowserRouter>
+      <UsersContext.Provider
+        value={{
+          update: refetch,
+        }}
+      >
+        <Header />
+
+        <main>
+          <UsersList users={data} />
+        </main>
+      </UsersContext.Provider>
+    </>
   );
 };
 

@@ -1,9 +1,12 @@
 module.exports = {
   users: [
     {
-      id: 1,
-      firstName: 'Abobys',
-      lastName: 'Kavo',
+      id: '0',
+      firstName: 'Old',
+      lastName: 'Developer',
+      city: 'Dnipro',
+      country: 'Ukraine',
+      timezone: 'Europe/Kyiv',
     },
   ],
 };
