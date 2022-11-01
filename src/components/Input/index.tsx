@@ -1,5 +1,6 @@
 import React, { DetailedHTMLProps, InputHTMLAttributes } from 'react';
 import cn from 'classnames';
+import _ from 'lodash';
 
 interface Props extends DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> {
   label?: string;
@@ -19,13 +20,18 @@ const Input: React.FC<Props> = ({ label, ...rest }) => {
         autoFocus={false}
         className={cn(
           'p-0 pl-3 pr-5 m-0 min-h-input max-w-input w-full border-2 rounded-md border-indigo-300 hover:border-indigo-400 focus:bg-blue-100 outline-0 transition-all',
-          !rest.validateStatus && 'border-red',
+          rest.validateStatus && 'border-red-400 hover:border-red-600',
+          rest.disabled && 'border-gray-200 pointer-events-none',
           rest.className
         )}
         {...rest}
       />
 
-      <p>{rest.errorMessage}</p>
+      <p
+        className={cn('absolute top-16 text-red-600 text-xs opacity-0 transition', rest.errorMessage && 'opacity-100')}
+      >
+        {_.capitalize(rest.errorMessage)}
+      </p>
     </div>
   );
 };

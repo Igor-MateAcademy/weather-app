@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import _ from 'lodash';
@@ -30,9 +30,11 @@ const WeatherModal: React.FC<Props> = ({ children, city }) => {
   const [currentForecast, setCurrentForecast] = useState<ForecastData[]>([]);
   const [page, setPage] = useState<number>(1);
   const [coords, setCoords] = useState<LatLon | null>(null);
-  const [localTime, setLocaleTime] = useState<moment.Moment>(moment().utc());
+  const [localTime, setLocalTime] = useState<moment.Moment | null>(null);
 
   const prepareWeatherData = (weather: CityWeather) => {
+    if (!localTime) return;
+
     const hoursOffset = moment(localTime).utcOffset();
     const { lon, lat } = weather;
     const items = weather.list;
@@ -65,12 +67,12 @@ const WeatherModal: React.FC<Props> = ({ children, city }) => {
 
   // get timezone data for city
   const timezoneResponse = useQuery([`get-timezone-by-coords-of-${city}`], () => getTimezoneByCoords(), {
-    enabled: isOpen,
+    enabled: false,
     select: ({ zoneName }) => zoneName,
     onSuccess: (timezone: string) => {
       const localTimeOfTZ = getLocalTimeByTimeZone(timezone);
 
-      setLocaleTime(localTimeOfTZ);
+      setLocalTime(localTimeOfTZ);
     },
   });
 
@@ -140,7 +142,7 @@ const WeatherModal: React.FC<Props> = ({ children, city }) => {
               <div className="flex items-center gap-2">
                 <ClockIcon className="w-4 h-4 stroke-darkblue" />
 
-                <span className="text-sm text-darkblue">{localTime.format('H:mm')}</span>
+                {localTime && <span className="text-sm text-darkblue">{localTime.format('H:mm')}</span>}
               </div>
             </div>
 

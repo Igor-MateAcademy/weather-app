@@ -8,14 +8,15 @@ interface Props {
   total: number;
   onChange: (page: number) => void;
   type?: 'expand' | 'compact';
+  pageClassName?: string;
 }
 
 // styles
 const button =
-  'p-2 bg-indigo-200 border border-transparent rounded-full transition-all hover:border-indigo-400 disabled:pointer-events-none disabled:opacity-0';
+  'p-2 bg-indigo-200 border border-transparent rounded-full transition-all hover:border-indigo-400 disabled:pointer-events-none disabled:opacity-70';
 const svg = 'w-4 h-4 text-indigo-400';
 
-const Pagination: React.FC<Props> = ({ type = 'compact', page, perPage, total, onChange }) => {
+const Pagination: React.FC<Props> = ({ type = 'compact', page, perPage, total, onChange, pageClassName }) => {
   const isCompact = type === 'compact';
   const totalPages = Math.ceil(total / perPage);
 
@@ -32,7 +33,7 @@ const Pagination: React.FC<Props> = ({ type = 'compact', page, perPage, total, o
 
         {isCompact && (
           <div className="flex justify-center items-center w-10">
-            <span className="text-xs text-darkblue">{`${page} / ${totalPages}`}</span>
+            <span className={cn('text-xs text-darkblue', pageClassName)}>{`${page} / ${totalPages}`}</span>
           </div>
         )}
 

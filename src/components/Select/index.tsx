@@ -2,6 +2,7 @@ import React, { useState, Fragment } from 'react';
 import { Combobox, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import _ from 'lodash';
+import cn from 'classnames';
 
 import { Empty } from 'components';
 
@@ -9,14 +10,27 @@ const { Option, Options } = Combobox;
 
 interface Props {
   label: string;
-  value?: string;
+  labelClassName?: string;
+  value?: string | null;
   options: string[];
   disabled?: boolean;
   required?: boolean;
   onSelect?: (value: string) => void;
+  validateStatus?: boolean;
+  errorMessage?: string;
 }
 
-const Select: React.FC<Props> = ({ label, value, options, required, disabled, onSelect }) => {
+const Select: React.FC<Props> = ({
+  label,
+  labelClassName,
+  value,
+  options,
+  required,
+  disabled,
+  onSelect,
+  validateStatus,
+  errorMessage,
+}) => {
   const [query, setQuery] = useState<string>('');
   const filteredOptions =
     query === ''
@@ -30,19 +44,39 @@ const Select: React.FC<Props> = ({ label, value, options, required, disabled, on
   };
 
   return (
-    <div>
-      {label && <label className="mb-1 font-medium">{label}</label>}
+    <div className="relative mb-4">
+      {label && <label className={cn('mb-1 font-medium', labelClassName)}>{label}</label>}
       {label && required && <span className="text-rose-600">*</span>}
 
-      <Combobox as="div" className="relative mb-4" value={value} onChange={onSelect} disabled={disabled}>
+      <Combobox
+        as="div"
+        className={cn(
+          'relative',
+          validateStatus && 'border-red-400 hover:border-red-600',
+          disabled && 'border-gray-200 pointer-events-none'
+        )}
+        value={value}
+        onChange={onSelect}
+        disabled={disabled}
+      >
         <div className="group relative w-full max-w-input transition">
           <Combobox.Input
             onChange={queryHandler}
-            className="flex items-stretch pl-3 pr-6 min-h-input w-full max-w-input rounded-md border-2 border-indigo-300 outline-0 hover:border-indigo-400 focus:bg-blue-100 transition-all overflow-hidden"
+            className={cn(
+              'flex items-stretch pl-3 pr-6 min-h-input w-full max-w-input rounded-md border-2 border-indigo-300 outline-0 hover:border-indigo-400 focus:bg-blue-100 transition-all overflow-hidden',
+              validateStatus && 'border-red-400 hover:border-red-600',
+              disabled && 'border-gray-200 pointer-events-none'
+            )}
           />
 
           <Combobox.Button className="absolute right-2 top-arrow">
-            <ChevronDownIcon className="w-5 h-5 text-indigo-300 group-hover:text-indigo-400" />
+            <ChevronDownIcon
+              className={cn(
+                'w-5 h-5 text-indigo-300 group-hover:text-indigo-400',
+                validateStatus && 'text-red-400 group-hover:text-red-600',
+                disabled && 'text-gray-200'
+              )}
+            />
           </Combobox.Button>
         </div>
 
@@ -74,6 +108,10 @@ const Select: React.FC<Props> = ({ label, value, options, required, disabled, on
           </Options>
         </Transition>
       </Combobox>
+
+      <p className={cn('absolute text-red-600 text-xs opacity-0 transition', errorMessage && 'opacity-100')}>
+        {_.capitalize(errorMessage)}
+      </p>
     </div>
   );
 };

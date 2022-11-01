@@ -20,7 +20,7 @@ interface Props {
 }
 
 const UsersList: React.FC<Props> = ({ users }) => {
-  const { update } = useContext(UsersContext);
+  const { update, page, setPage, usersCount } = useContext(UsersContext);
   const { mutateAsync } = useMutation(['delete-user'], (id: string) => deleteUserById(id), {
     onError: (e: string) => {
       console.log('Error', e);
@@ -28,12 +28,13 @@ const UsersList: React.FC<Props> = ({ users }) => {
   });
 
   const deleteUser = async (id: string) => {
+    usersCount === 1 && setPage(page - 1);
     await mutateAsync(id);
     await update();
   };
 
   return (
-    <div className="container mx-auto p-4 h-full rounded-lg bg-darkblue shadow-primary">
+    <div className="mb-6 p-4 h-full rounded-lg bg-darkblue shadow-primary">
       {_.isUndefined(users) || users.length === 0 ? (
         <Empty fill="text-white" />
       ) : (

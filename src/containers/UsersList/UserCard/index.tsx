@@ -9,21 +9,23 @@ import WeatherModal from './WeatherModal';
 
 // models
 import { User } from 'models';
+import _ from 'lodash';
+
+// styles
+const svg = 'w-5 h-5 stroke-indigo-400 fill-indigo-300';
+const actionSvg = 'w-4 h-4 text-indigo-400';
+const actionButton = 'border border-indigo-400 rounded opacity-0 group-hover:opacity-100 transition';
 
 interface Props extends User {
   onDelete: (id: string) => void;
 }
 
 const UserCard: React.FC<Props> = ({ id, firstName, lastName, city, country, timezone, onDelete }) => {
-  const svg = 'w-5 h-5 stroke-indigo-400 fill-indigo-300';
-  const actionSvg = 'w-4 h-4 text-indigo-400';
-  const actionButton = 'border border-indigo-400 rounded opacity-0 group-hover:opacity-100 transition';
-
   return (
     <li>
       <button className="relative block flex flex-col items-center px-4 py-4 w-full min-h-card h-full bg-blue-200 rounded group">
         <div className="flex justify-center mb-4">
-          <Avatar {...{ firstName, lastName }} size={56} />
+          <Avatar {...{ firstName, lastName }} size={56} key={`${firstName + lastName}-${id}`} />
         </div>
 
         <div>

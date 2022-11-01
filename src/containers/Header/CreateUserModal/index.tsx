@@ -1,15 +1,14 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useLayoutEffect } from 'react';
 import { useMutation, useQuery } from 'react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import _ from 'lodash';
 import cn from 'classnames';
+import { countryToAlpha2 } from 'country-to-iso';
 
 // components
-import { Modal, Text, Button } from 'components';
-import ContactInfo from './ContactInfo';
-import LocationInfo from './LocationInfo';
+import { Modal, Text, Button, Input, Select } from 'components';
 
 // queries
 import { getUserById } from 'graphql/queries';
@@ -22,6 +21,9 @@ import { User, NewUser } from 'models';
 
 // context
 import { UsersContext } from 'containers/App/context';
+
+// utils
+import { countries, getTimezonesByCountry } from 'utils';
 
 interface Props {
   currentUser?: User;
@@ -36,6 +38,9 @@ const DEFAULT_VALUES = {
 const schema = yup.object().shape({
   firstName: yup.string().required(),
   lastName: yup.string().required(),
+  country: yup.string().required(),
+  timezone: yup.string().required(),
+  city: yup.string().required(),
 });
 
 // styles
@@ -47,32 +52,25 @@ const CreateUserModal: React.FC<Props> = ({ children, currentUser }) => {
     control,
     formState: { errors },
     getValues,
+    setValue,
     reset,
+    watch,
   } = useForm<User>({
     mode: 'onBlur',
-    reValidateMode: 'onChange',
+    reValidateMode: 'onBlur',
     resolver: yupResolver(schema),
   });
-  const { update } = useContext(UsersContext);
-  // const [user, setUser] = useState<NewUser>({
-  //   ...DEFAULT_USER,
-  // });
+
+  const isCountrySelected = watch('country');
+  const isTimezoneSelected = watch('timezone');
+
+  const { update, setPage } = useContext(UsersContext);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<number>(1);
 
   const isExist = !!currentUser;
-  const steps = [1, 2, 3];
 
-  const { data, refetch } = useQuery(
-    [`user-${currentUser?.id}`, currentUser?.id],
-    () => isExist && getUserById(currentUser.id),
-    {
-      onSuccess: data => {
-        // data && setUser(data);
-      },
-    }
-  );
-  const { mutateAsync, isLoading } = useMutation(['create-user'], (user: NewUser) => addUser(user), {
+  const userById = useQuery([`user-${currentUser?.id}`, currentUser?.id], () => isExist && getUserById(currentUser.id));
+  const createUser = useMutation(['create-user'], (user: NewUser) => addUser(user), {
     onSuccess: async () => {
       onToggle();
       await update();
@@ -83,8 +81,8 @@ const CreateUserModal: React.FC<Props> = ({ children, currentUser }) => {
   });
   const updateResponse = useMutation([`update-user-${currentUser?.id}`], (user: Partial<User>) => updateUser(user), {
     onSuccess: async () => {
-      onToggle();
       await update();
+      onToggle();
     },
     onError: (e: string) => {
       console.log(e);
@@ -94,45 +92,46 @@ const CreateUserModal: React.FC<Props> = ({ children, currentUser }) => {
   const onToggle = async () => {
     setIsOpen(!isOpen);
 
-    if (!isOpen) {
-      setCurrentStep(1);
-      reset({ ...DEFAULT_VALUES });
+    if (isExist) {
+      await userById.refetch();
+      reset(userById.data);
     }
 
-    // if (!isOpen && !isExist) setUser(DEFAULT_USER);
+    if (!isOpen && !isExist) {
+      reset({ ...DEFAULT_VALUES });
+    }
   };
 
-  const onSubmit = async (data: Partial<User>) => {
-    console.log(data);
+  const onSubmit = async (data: NewUser) => {
+    if (isExist) {
+      await updateResponse.mutateAsync(data);
+    } else {
+      await createUser.mutateAsync(data);
+    }
 
-    // if (isExist) {
-    //   await updateResponse.mutateAsync(user);
-    // } else {
-    //   await mutateAsync(user);
-    // }
+    await update();
   };
 
-  // const selectHandler = (field: keyof NewUser) => (value: string) => {
-  //   const userData = {
-  //     ...user,
-  //     [field]: value,
-  //   };
+  const getTimezonesList = () => {
+    const country = getValues('country');
 
-  //   setUser(field === 'country' ? { ...userData, timezone: '', city: '' } : userData);
-  // };
+    if (!country) return [];
 
-  // const inputHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setUser({
-  //     ...user,
-  //     [e.target.name]: e.target.value,
-  //   });
-  // };
+    const converted = countryToAlpha2(country);
 
-  console.log(errors);
+    if (!converted) return [];
 
-  useEffect(() => {
-    reset({ ...DEFAULT_VALUES });
-  }, []);
+    return getTimezonesByCountry(converted);
+  };
+
+  const selectHandler = (field: keyof NewUser) => (value: string) => {
+    setValue(field, value);
+
+    if (field === 'country') {
+      setValue('timezone', '');
+      setValue('city', '');
+    }
+  };
 
   return (
     <>
@@ -147,49 +146,89 @@ const CreateUserModal: React.FC<Props> = ({ children, currentUser }) => {
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-8">
-              <Button
-                className={cn(button, currentStep === 1 && 'opacity-0 pointer-events-none')}
-                onClick={() => setCurrentStep(currentStep - 1)}
-              >
-                Previous
-              </Button>
-
-              <div className="flex items-center gap-2">
-                {steps.map(step => (
-                  <div
-                    className={cn('w-6 h-1 rounded bg-gray-200 transition', step <= currentStep && 'bg-lime-400')}
-                    key={step}
-                  />
-                ))}
-              </div>
-
-              <Button
-                className={cn(button, currentStep === 3 && 'opacity-0 pointer-events-none')}
-                onClick={() => setCurrentStep(currentStep + 1)}
-              >
-                Next
-              </Button>
-            </div>
-
-            <div className="flex flex-col items-center gap-2">
-              {currentStep === 1 ? (
-                <ContactInfo />
-              ) : currentStep === 2 ? (
-                <LocationInfo control={control} getValues={getValues} errors={errors} />
-              ) : (
-                <>Result page</>
+            <Controller
+              name="firstName"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  label="First Name"
+                  validateStatus={!!errors.firstName}
+                  errorMessage={errors.firstName?.message}
+                  required
+                />
               )}
-            </div>
+            />
+
+            <Controller
+              name="lastName"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  label="Last Name"
+                  validateStatus={!!errors.lastName}
+                  errorMessage={errors.lastName?.message}
+                  required
+                />
+              )}
+            />
+
+            <Controller
+              name="country"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  label="Country"
+                  options={countries}
+                  onSelect={selectHandler('country')}
+                  validateStatus={!!errors.country}
+                  errorMessage={errors.country?.message}
+                  required
+                />
+              )}
+            />
+
+            <Controller
+              name="timezone"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  label="Timezone"
+                  options={getTimezonesList()}
+                  onSelect={selectHandler('timezone')}
+                  validateStatus={!!errors.timezone}
+                  errorMessage={errors.timezone?.message}
+                  disabled={!isCountrySelected}
+                  required
+                />
+              )}
+            />
+
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  label="City"
+                  validateStatus={!!errors.city}
+                  errorMessage={errors.city?.message}
+                  disabled={!isCountrySelected || !isTimezoneSelected}
+                  required
+                />
+              )}
+            />
           </div>
 
-          {/* <Button
-            isLoading={isLoading || updateResponse.isLoading}
-            disabled={_.isEqual(user, currentUser)}
+          <Button
+            isLoading={createUser.isLoading || updateResponse.isLoading}
             className="py-2 px-4 bg-indigo-300 hover:bg-indigo-400 transition"
           >
             {isExist ? 'Save' : 'Create'}
-          </Button> */}
+          </Button>
         </form>
       </Modal>
     </>
